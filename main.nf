@@ -8,7 +8,7 @@ workflow {
       bam_ch = channel.fromPath(params.samplesheet)
         | splitCsv(header: true)
         | map { row ->
-            tuple([id: row.sample], [file(row.bam)])
+            tuple([id: row.sample], file(row.bam))
           }
     } else if (params.bam) {
         bam_ch = channel.fromPath(params.bam, checkIfExists: true)
@@ -16,23 +16,28 @@ workflow {
     } else {
         error "Please specify either --samplesheet samplesheet.csv or --bam 'data/*.bam'"
     }
-    bam_ch | view
 
     // Load reference
     reference_ch = channel.fromPath(params.reference, checkIfExists:true)
     | map { n -> tuple(n.baseName, n) }
 
     SAMTOOLS_FAIDX(
-      reference_ch.map { meta, fasta -> tuple(meta, fasta, [])}
+      reference_ch.map { meta, fasta -> tuple(meta, fasta, [])},
+      []
     )
 
     indexed_reference_ch = reference_ch
     | join(SAMTOOLS_FAIDX.out.fai)
 
+    input_ch = bam_ch
+    | combine(indexed_reference_ch)
+    | map { meta, bam, meta2, fasta, fai -> tuple(meta, bam, meta2, fasta, fai, [])}
+    | view
+
     BCFTOOLS_MPILEUP(
-      bam_ch.map { meta, bam -> tuple(meta, bam, [], []) },
-      indexed_reference_ch,
-      false
+      input_ch.map { meta, bam, meta2, fasta, fai, other -> tuple(meta, bam, [], []) },
+      input_ch.map { meta, bam, meta2, fasta, fai, other -> tuple(meta2, fasta, fai) },
+      input_ch.map { meta, bam, meta2, fasta, fai, other -> other }
     )
 
 }
