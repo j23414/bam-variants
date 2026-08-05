@@ -31,6 +31,36 @@ process BCFTOOLS_FILLTAGS {
     """
 }
 
+
+process VCF_ANNOTATOR {
+    tag "annotate"
+
+    // conda "/research_jude/rgs01_jude/groups/chagugrp/home/common/jchang99/miniconda3/envs/vcf_annotator_env/"
+
+    // container "${workflow.containerEngine in ['singularity','apptainer'] && !task.ext.singularity_pull_docker_container
+    //     ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/...'  // see note below
+    //     : 'quay.io/biocontainers/vcf-annotator:<tag>'"
+
+    input:
+    tuple val(meta), path(vcf)
+    path(genbank)
+
+    output:
+    path "annotated.vcf"
+
+    script:
+    """
+    # Work around, until I get a docker image or conda environment
+    source /research_jude/rgs01_jude/groups/chagugrp/home/common/jchang99/miniconda3/etc/profile.d/conda.sh
+    conda activate /research_jude/rgs01_jude/groups/chagugrp/home/common/jchang99/miniconda3/envs/vcf_annotator_env/
+    vcf-annotator \\
+        ${vcf} \\
+        ${genbank} \\
+        --output annotated.vcf
+    """
+}
+
+
 process BCFTOOLS_QUERY {
 
     input:
@@ -51,26 +81,6 @@ process BCFTOOLS_QUERY {
     """
 }
 
-process VCF_ANNOTATOR {
-    tag "annotate"
-
-    input:
-    path(vcf)
-    path(genbank)
-
-    output:
-    path "annotated.vcf"
-
-    script:
-    """
-    vcf-annotator \
-        ${vcf} \
-        ${genbank} \
-        --output annotated.vcf
-    """
-}
-
-
 workflow {
     main:
     // ============ Load Files ==================== //
@@ -90,7 +100,7 @@ workflow {
         error "Please specify either --samplesheet samplesheet.csv or --bam 'data/*.bam'"
     }
 
-    reference_ch = channel.fromPath(params.reference, checkIfExists:true)
+    reference_ch = channel.fromPath(params.reference_fasta, checkIfExists:true)
     | map { n -> tuple(n.baseName, n) }
 
     SAMTOOLS_FAIDX(
@@ -176,11 +186,19 @@ workflow {
 
     //merge_input_ch.view { "merge_input_ch: $it" }
 
-    // tuple val(meta), path(vcfs), path(tbis), path(bed)
-    // tuple val(meta2), path(fasta), path(fai)
     BCFTOOLS_MERGE(
       merge_input_ch.map{meta, vcfs, tbis, meta2, fasta, fai -> tuple(meta, vcfs, tbis, [])},
-      merge_input_ch.map{meta, vcfs, tbis, meta2, fasta, fai -> tuple(meta2, fasta, fai, [])}
+      merge_input_ch.map{meta, vcfs, tbis, meta2, fasta, fai -> tuple(meta2, fasta, fai)}
     )
 
+    if(params.reference_gb){
+      reference_gb_ch = channel.fromPath(params.reference_gb, checkIfExists: true)
+      VCF_ANNOTATOR(
+        BCFTOOLS_MERGE.out.vcf,
+        reference_gb_ch
+      )
+      BCFTOOLS_QUERY(
+        VCF_ANNOTATOR.out
+      )
+    }
 }
