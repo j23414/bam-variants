@@ -1,5 +1,5 @@
 include { SAMTOOLS_FAIDX } from './modules/nf-core/samtools/faidx/main'
-include { BCFTOOLS_MPILEUP } from './modules/nf-core/bcftools/mpileup/main'
+include { BCFTOOLS_MPILEUP as BCFTOOLS_MPILEUP_CALL } from './modules/nf-core/bcftools/mpileup/main'
 include { BCFTOOLS_NORM } from './modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_MERGE } from './modules/nf-core/bcftools/merge/main'
 include { BCFTOOLS_INDEX } from './modules/nf-core/bcftools/index/main'
@@ -100,7 +100,7 @@ workflow {
     | combine(indexed_reference_ch)
     | map { meta, bam, meta2, fasta, fai -> tuple(meta, bam, meta2, fasta, fai, [])}
 
-    BCFTOOLS_MPILEUP(
+    BCFTOOLS_MPILEUP_CALL(
       mpileup_input_ch.map { meta, bam, meta2, fasta, fai, other -> tuple(meta, bam, [], []) }, // BAM
       mpileup_input_ch.map { meta, bam, meta2, fasta, fai, other -> tuple(meta2, fasta, fai) }, // REF
       mpileup_input_ch.map { meta, bam, meta2, fasta, fai, other -> other } // SAVE_MPILEUP or FALSE here since bcftools call is in this module
