@@ -1,0 +1,34 @@
+name: "vcf_annotator"
+description: Annotate variants in a VCF using a GenBank reference.
+keywords:
+  - annotation
+  - vcf
+  - genbank
+  - variants
+tools:
+  - "vcf_annotator":
+      description: "Annotates variants in a VCF using annotations from a GenBank file."
+      homepage: "https://github.com/rpetit3/vcf-annotator"
+      documentation: "https://github.com/rpetit3/vcf-annotator"
+      tool_dev_url: "https://github.com/rpetit3/vcf-annotator"
+      licence: ["MIT License"]
+
+input:
+  - vcf:
+      type: file
+      description: Input VCF file.
+      pattern: "*.{vcf,vcf.gz}"
+
+  - genbank:
+      type: file
+      description: GenBank reference annotation file.
+      pattern: "*.{gb,gbk,gbff,genbank}"
+
+output:
+  - annotated_vcf:
+      type: file
+      description: Annotated VCF file.
+      pattern: "*.vcf"
+
+authors:
+  - "@j23414"

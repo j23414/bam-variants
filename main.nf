@@ -4,12 +4,13 @@ include { BCFTOOLS_NORM } from './modules/nf-core/bcftools/norm/main'
 include { BCFTOOLS_MERGE } from './modules/nf-core/bcftools/merge/main'
 include { BCFTOOLS_INDEX } from './modules/nf-core/bcftools/index/main'
 include { BCFTOOLS_FILTER } from './modules/nf-core/bcftools/filter/main'
+include { VCF_ANNOTATOR } from './modules/local/vcfannotator/main'
 
 process BCFTOOLS_FILLTAGS {
     tag "${meta.id}"
     label 'process_medium'
 
-    conda "${moduleDir}/environment.yml"
+    conda "${projectDir}/modules/nf-core/bcftools/mpileup//environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
         ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/0b/0b4d52ca9a56d07be3f78a12af654e5116f5112908dba277e6796fd9dfb83fe5/data'
         : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
@@ -31,37 +32,11 @@ process BCFTOOLS_FILLTAGS {
     """
 }
 
-
-process VCF_ANNOTATOR {
-    tag "annotate"
-
-    // conda "/research_jude/rgs01_jude/groups/chagugrp/home/common/jchang99/miniconda3/envs/vcf_annotator_env/"
-
-    // container "${workflow.containerEngine in ['singularity','apptainer'] && !task.ext.singularity_pull_docker_container
-    //     ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/...'  // see note below
-    //     : 'quay.io/biocontainers/vcf-annotator:<tag>'"
-
-    input:
-    tuple val(meta), path(vcf)
-    path(genbank)
-
-    output:
-    path "annotated.vcf"
-
-    script:
-    """
-    # Work around, until I get a docker image or conda environment
-    source /research_jude/rgs01_jude/groups/chagugrp/home/common/jchang99/miniconda3/etc/profile.d/conda.sh
-    conda activate /research_jude/rgs01_jude/groups/chagugrp/home/common/jchang99/miniconda3/envs/vcf_annotator_env/
-    vcf-annotator \\
-        ${vcf} \\
-        ${genbank} \\
-        --output annotated.vcf
-    """
-}
-
-
 process BCFTOOLS_QUERY {
+    conda "${projectDir}/modules/nf-core/bcftools/mpileup/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/0b/0b4d52ca9a56d07be3f78a12af654e5116f5112908dba277e6796fd9dfb83fe5/data'
+        : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
 
     input:
     path(vcf)
@@ -73,7 +48,7 @@ process BCFTOOLS_QUERY {
     """
     bcftools query \
       -HH \
-      -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t%Gene\\t%Product\\t%VariantType\\t%FeatureType\\t%IsPseudo\\t%IsGenic\\t%IsTransition\\t%IsSynonymous\\t%AminoAcidChange\\t%SNPCodonPosition\\t%CodonPosition\\t%AltAminoAcid\\t%RefAminoAcid\\t%AltCodon\\t%RefCodon[\\t%VAF]' \
+      -f '%CHROM\t%POS\t%REF\t%ALT\t%Gene\t%Product\t%VariantType\t%FeatureType\t%IsPseudo\t%IsGenic\t%IsTransition\t%IsSynonymous\t%AminoAcidChange\t%SNPCodonPosition\t%CodonPosition\t%AltAminoAcid\t%RefAminoAcid\t%AltCodon\t%RefCodon[\t%VAF]' \
       ${vcf} \
       | sed 's/:VAF//g' \
       | sed 's/^#CHROM/CHROM/g' \
