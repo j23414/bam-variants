@@ -2,6 +2,8 @@
 
 A modular workflow for generating a table of variants from alignment information.
 
+![](diagram.png)
+
 ## Usage
 
 ```bash

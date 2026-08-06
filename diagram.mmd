@@ -1,0 +1,51 @@
+%%metro title: j23414/bam-variants
+%%metro line_order: definition
+%%metro mode: light
+%%metro center_ports: true
+%%metro line: main | Main | #c792ea
+%%metro line: ref | Reference FASTA | #fbbf24
+%%metro line: gb | Reference GenBank | #ff7f50
+
+graph LR
+
+    subgraph input [Input]
+        bam["Filtered BAM files"]
+        ref["Reference FASTA"]
+        genbank["Reference GenBank"]
+    end
+
+    subgraph variants [Variant Calling - bcftools]
+        mpileup["mpileup + call"]
+        filltags["+fill-tags Add VAF"]
+        filter["filter Depth filtering"]
+        norm["norm Left align + split multiallelics"]
+        merge["merge Combine VCFs"]
+    end
+
+    subgraph reference [Index Reference]
+        faidx["samtools faidx"]
+    end
+
+    subgraph annotation [Annotation]
+        direction TB
+        annotator["VCF Annotator"]
+        query["bcftools query"]
+       
+    end
+
+    subgraph results [Results]
+        table["Variant Summary TSV"]
+    end
+ 
+    bam -->|main| mpileup
+    mpileup -->|main| filltags
+    filltags -->|main| filter
+    filter -->|main| norm
+    norm -->|main| merge
+    merge -->|main| annotator
+    annotator -->|main| query
+    query -->|main| table
+    
+    ref -->|ref| faidx
+    faidx -->|ref| mpileup
+    genbank -->|gb| annotator
