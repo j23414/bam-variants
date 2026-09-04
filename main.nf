@@ -106,7 +106,7 @@ workflow {
       mpileup_input_ch.map { meta, bam, meta2, fasta, fai, other -> other } // SAVE_MPILEUP or FALSE here since bcftools call is in this module
     )
 
-    mpileup_ch = BCFTOOLS_MPILEUP.out.vcf
+    mpileup_ch = BCFTOOLS_MPILEUP_CALL.out.vcf
     // === Optional debug
     // mpileup_ch.view { "mpileup_ch: $it" }
 
