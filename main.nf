@@ -48,7 +48,7 @@ process BCFTOOLS_QUERY {
     """
     bcftools query \
       -HH \
-      -f '%CHROM\t%POS\t%REF\t%ALT\t%Gene\t%Product\t%VariantType\t%FeatureType\t%IsPseudo\t%IsGenic\t%IsTransition\t%IsSynonymous\t%AminoAcidChange\t%SNPCodonPosition\t%CodonPosition\t%AltAminoAcid\t%RefAminoAcid\t%AltCodon\t%RefCodon[\t%VAF]' \
+      -f '%CHROM\t%POS\t%REF\t%ALT\t%Gene\t%Product\t%VariantType\t%FeatureType\t%IsPseudo\t%IsGenic\t%IsTransition\t%IsSynonymous\t%AminoAcidChange\t%SNPCodonPosition\t%CodonPosition\t%AltAminoAcid\t%RefAminoAcid\t%AltCodon\t%RefCodon[\t%VAF\t%DP\t%AD\t%ADF\t%ADR]' \
       ${vcf} \
       | sed 's/:VAF//g' \
       | sed 's/^#CHROM/CHROM/g' \
