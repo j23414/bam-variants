@@ -42,7 +42,7 @@ process BCFTOOLS_QUERY {
     path(vcf)
 
     output:
-    path "sample_variants_results.tsv"
+    path("sample_variants_results.tsv"), emit: tsv
 
     script:
     """
@@ -56,6 +56,28 @@ process BCFTOOLS_QUERY {
     """
 }
 // -f '%CHROM\t%POS\t%REF\t%ALT\t%Gene\t%Product\t%VariantType\t%FeatureType\t%IsPseudo\t%IsGenic\t%IsTransition\t%IsSynonymous\t%AminoAcidChange\t%SNPCodonPosition\t%CodonPosition\t%AltAminoAcid\t%RefAminoAcid\t%AltCodon\t%RefCodon[\t%VAF\t%DP\t%AD\t%ADF\t%ADR]' \
+
+process PIVOT_VARIANTS {
+
+    conda 'conda-forge::python=3.12 conda-forge::pandas=2.2'
+
+    container "${workflow.containerEngine in ['singularity', 'apptainer']
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/88/8829bf123fc6b4b654fc8ab8b619d7f0e895993227a81150fa39aa590da91b1c/data'
+        : 'community.wave.seqera.io/library/pandas:3.1.0--f6c858a02e385828'}"
+
+    input:
+    path(variants_file)
+
+    output:
+    path("sample_variants_results_longer.tsv")
+
+    script:
+    """
+    python ${workflow.projectDir}/bin/pivot_longer.py \\
+        --input ${variants_file} \\
+        --output sample_variants_results_longer.tsv
+    """
+}
 
 workflow {
     main:
@@ -175,6 +197,9 @@ workflow {
       )
       BCFTOOLS_QUERY(
         VCF_ANNOTATOR.out
+      )
+      PIVOT_VARIANTS(
+        BCFTOOLS_QUERY.out.tsv
       )
     }
 }
